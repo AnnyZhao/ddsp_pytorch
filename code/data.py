@@ -21,7 +21,7 @@ Raw audio and features dataset definition
 """
 class AudioFeaturesDataset(Dataset):
     """
-    Create a dataseet of mixed audio, fft and features. Each of the original 
+    Create a dataseet of mixed audio, fft and features. Each of the original
     audio tracks will be processed by first slicing it into blocks X sequence
     elements. Each element is the used as input to obtain
     - Multi-scale FFT information
@@ -71,14 +71,18 @@ class AudioFeaturesDataset(Dataset):
         self.extractors = {}
         self.extractors['f0'] = FundamentalFrequency(args.sr, args.block_size, args.sequence_size).float()
         self.extractors['loudness'] = Loudness(args.block_size, args.kernel_size).float()
-    
+
     def preprocess_dataset(self, datadir):
         cur_id = 0
         for cur_file in self.data_files:
             # Keep the current file name
             f_name, _ = os.path.splitext(os.path.basename(cur_file))
             # Import audio
-            y, sr = librosa.core.load(cur_file) 
+            y, sr = librosa.core.load(cur_file)
+            # Resample to args.sr
+            if sr != self.args.sr:
+                print("Resampling {} from {} to {}".format(f_name, sr, self.args.sr))
+                y = librosa.core.resample(y, sr, self.args.sr)
             # Compute all sequences
             mod = self.args.block_size * self.args.sequence_size
             # Reshape into batch x seq
@@ -91,13 +95,15 @@ class AudioFeaturesDataset(Dataset):
                 features['name'] = f_name
                 features['audio'] = y[i]
                 features['fft'] = cur_fft[i]
+                for zz in cur_fft[i]:
+                    assert zz.size(-1) != 3997, "fft size is {}".format(zz.size(-1))
                 # Compute features in dataset
                 for k, v in self.extractors.items():
                     features[k] = v(y[i])[:self.args.sequence_size]
                 # Save to numpy compressed format
                 np.save(datadir + '/data/seq_' + str(cur_id) + '.npy', features)
-                cur_id += 1    
-    
+                cur_id += 1
+
     def switch_set(self, name):
         if (name == 'test'):
             self.features_files = self.test_files[0]
@@ -125,32 +131,32 @@ class AudioFeaturesDataset(Dataset):
             self.var = self.var + ((data - self.mean) * b_var).mean()
         self.mean = float(self.mean)
         self.var = float(np.sqrt(self.var / len(self.features_files)))
-    
+
     def analyze_dataset(self):
         # Fill some properties based on the first file
         loaded = np.load(self.features_files[0], allow_pickle=True).item()
         # Here we simply get the input and output shapes
         self.input_size = loaded['audio'].shape
         self.output_size = self.input_size
-            
+
     def create_splits(self, splits, shuffle_files):
-            nb_files = len(self.features_files)
-            if (shuffle_files):
-                idx = np.random.permutation(nb_files).astype('int')
-                self.features_files = [self.features_files[i] for i in idx]
-            idx = np.linspace(0, nb_files-1, nb_files).astype('int')
-            train_idx = idx[:int(splits[0]*nb_files)]
-            valid_idx = idx[int(splits[0]*nb_files):int((splits[0]+splits[1])*nb_files)]
-            test_idx = idx[int((splits[0]+splits[1])*nb_files):]
-            # Validation split
-            self.valid_files = (
-                    [self.features_files[i] for i in valid_idx],
-                    None)
-            # Test split
-            self.test_files = (
-                    [self.features_files[i] for i in test_idx],
-                    None)
-            self.features_files = [self.features_files[i] for i in train_idx]
+        nb_files = len(self.features_files)
+        if (shuffle_files):
+            idx = np.random.permutation(nb_files).astype('int')
+            self.features_files = [self.features_files[i] for i in idx]
+        idx = np.linspace(0, nb_files-1, nb_files).astype('int')
+        train_idx = idx[:int(splits[0]*nb_files)]
+        valid_idx = idx[int(splits[0]*nb_files):int((splits[0]+splits[1])*nb_files)]
+        test_idx = idx[int((splits[0]+splits[1])*nb_files):]
+        # Validation split
+        self.valid_files = (
+                [self.features_files[i] for i in valid_idx],
+                None)
+        # Test split
+        self.test_files = (
+                [self.features_files[i] for i in test_idx],
+                None)
+        self.features_files = [self.features_files[i] for i in train_idx]
 
     def __getitem__(self, idx):
         loaded = np.load(self.features_files[idx], allow_pickle=True).item()

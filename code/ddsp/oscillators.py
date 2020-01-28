@@ -23,7 +23,7 @@ class HarmonicOscillators(Oscillator):
         super(Oscillator, self).__init__()
         self.apply(self.init_parameters)
         self.n_partial = n_partial
-        self.upsample = nn.Upsample(scale_factor = block_size, mode="linear", align_corners=False)
+        self.upsample = nn.Upsample(scale_factor=block_size, mode="linear", align_corners=False)
         self.k = nn.Parameter(torch.arange(1, n_partial + 1).reshape(1,1,-1).float(), requires_grad=False)
         self.sample_rate = sample_rate
     
@@ -45,7 +45,7 @@ class HarmonicOscillators(Oscillator):
         # Generate the output signal
         y =  amp * torch.sum(anti_alias * alpha * torch.sin(self.k * phi), -1)
         return y
-    
+
     def set_parameters(self, params, batch_dim=64):
         """ Set parameters values (sub-modules) """
         self.amp = params[:, :, 0].unsqueeze(2)

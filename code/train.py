@@ -107,6 +107,7 @@ Dataset import definitions
 args.scales = []
 for s in range(args.fft_scales[1]):
     args.scales.append(args.fft_scales[0] * (2 ** s))
+print('FTT scales: ', args.scales)
 print('[Loading dataset]')
 ref_split = args.path + '/reference_split_' + args.dataset + '.th'
 if (args.train_type == 'random' or (not os.path.exists(ref_split))):
@@ -156,7 +157,7 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=20, verbose=True, threshold=1e-7)
 # Loss
 if (args.loss == 'msstft'):
-    loss = MSSTFTLoss(args.scales)
+    loss = MSSTFTLoss(args.scales).to(args.device)
 else:
     raise Exception('Unknown loss ' + args.loss)
 
@@ -175,13 +176,13 @@ for i in range(args.epochs):
     args.beta = args.beta_factor * (float(i) / float(max(args.warm_latent, i)))
     print('Epoch. %d - beta = %.3f'%(i+1, args.beta))
     # Perform one epoch of train
-    losses[i, 0] = model.train_epoch(train_loader, loss, optimizer, args)    
+    losses[i, 0] = model.train_epoch(train_loader, loss, optimizer, args).detach()
     # Perform validation
-    losses[i, 1] = model.eval_epoch(valid_loader, loss, args)
+    losses[i, 1] = model.eval_epoch(valid_loader, loss, args).detach()
     # Learning rate scheduling
     scheduler.step(losses[i, 1])
     # Perform test evaluation
-    losses[i, 2] = model.eval_epoch(test_loader, loss, args)
+    losses[i, 2] = model.eval_epoch(test_loader, loss, args).detach()
     # Model saving
     if (losses[i, 1] < best_loss):
         # Save model
@@ -206,7 +207,7 @@ for i in range(args.epochs):
         print('[Going to evaluation mode]')
         break
     print('Epoch ' + str(i))
-    print(losses[i])
+    print('Losses' + losses[i])
 
 """
 ###################

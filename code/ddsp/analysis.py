@@ -102,7 +102,9 @@ class MultiscaleFFT(Analysis):
         stfts = []
         for i, scale in enumerate(self.scales):
             cur_fft = torch.stft(x, n_fft=scale, window=self.windows[i], hop_length=int((1-self.overlap)*scale), center=False)
-            stfts.append(amp(cur_fft))
+            amplitude = amp(cur_fft)
+            # assert amplitude.size(-1) != 1997, "scale {}, x_len {}, hop_len {}".format(scale, x.size(), int((1-self.overlap)*scale))
+            stfts.append(amplitude)
         if (self.reshape):
             stft_tab = []
             for b in range(x.shape[0]):

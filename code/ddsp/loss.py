@@ -23,7 +23,7 @@ amp = lambda x: x[...,0]**2 + x[...,1]**2
 class MSSTFTLoss(Loss):
     """
     Compute the FFT of a signal at multiple scales
-    
+
     Arguments:
             block_size (int)    : size of a block of conditionning
             sequence_size (int) : size of the conditioning sequence
@@ -44,8 +44,10 @@ class MSSTFTLoss(Loss):
         # First compute multiple STFT for x
         for i, scale in enumerate(self.scales):
             cur_fft = torch.stft(x, n_fft=scale, window=self.windows[i], hop_length=int((1-self.overlap)*scale), center=False)
-            stfts.append(amp(cur_fft))
-        # Compute loss 
-        lin_loss = sum([torch.mean(abs(stfts_orig[i][j] - stfts[i][j])) for j in range(len(stfts[i])) for i in range(len(stfts))])
-        log_loss = sum([torch.mean(abs(torch.log(stfts_orig[i][j] + 1e-4) - torch.log(stfts[i][j] + 1e-4)))  for j in range(len(stfts[i])) for i in range(len(stfts))])
+            amplitude = amp(cur_fft)
+            # assert amplitude.size(-1) != 3997, "scale {}, x_len {}, hop_len {}".format(scale, x.size(), int((1-self.overlap)*scale))
+            stfts.append(amplitude)
+        # Compute loss
+        lin_loss = sum([torch.mean(abs(stfts_orig[i][j].to(amplitude.device) - stfts[i][j].to(amplitude.device))) for j in range(len(stfts[i])) for i in range(len(stfts))])
+        log_loss = sum([torch.mean(abs(torch.log(stfts_orig[i][j].to(amplitude.device) + 1e-4) - torch.log(stfts[i][j].to(amplitude.device) + 1e-4))) for j in range(len(stfts[i])) for i in range(len(stfts))])
         return lin_loss + log_loss

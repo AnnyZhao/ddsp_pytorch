@@ -118,4 +118,6 @@ class Reverb(Effects):
         Y_S_CONV[:,:,1] = Y_S[:,:,0] * IR_S[:,:,1] + Y_S[:,:,1] * IR_S[:,:,0]
         # Invert the reverberated signal
         y = torch.irfft(Y_S_CONV, 1, signal_sizes=(y.shape[-1],))
+        # Crop back to original input length
+        y = y[:, :z.size(-1)]
         return y

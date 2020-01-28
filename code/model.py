@@ -39,7 +39,7 @@ class DDSSynth(AE):
         self.synth = synth
         if (upsampler is None):
             self.upsampler = nn.Upsample(scale_factor=args.block_size, mode="linear", align_corners=False)
-    
+
     def decode(self, z):
         """
         Decoding function of the DDSSynth.
@@ -64,7 +64,7 @@ class DDSSynth(AE):
         # Decode the samples
         x_tilde = self.decode((z_tilde, condition))
         return x_tilde, z_tilde, z_loss
-    
+
     def train_epoch(self, loader, loss, optimizer, args):
         self.train()
         full_loss = 0
@@ -85,7 +85,7 @@ class DDSSynth(AE):
             full_loss += b_loss
         full_loss /= len(loader)
         return full_loss
-    
+
     def eval_epoch(self, loader, loss, args):
         self.eval()
         full_loss = 0
@@ -129,7 +129,7 @@ class DDSSynthWAE(DDSSynth, WAE):
     def __init__(self, encoder, decoder, synth, args, upsampler=None):
         DDSSynth.__init__(self, encoder, decoder, synth, args, upsampler)
         WAE.__init__(self)
-        
+
 """
 ###################
 

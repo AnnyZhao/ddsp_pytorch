@@ -22,9 +22,9 @@ def plot_batch_detailed(batch, n_examples = 4, name=None):
     # Create one big image for plot
     fig, axes = plt.subplots(n_examples, 9, figsize=(20, 10))
     for b in range(min(n_examples, audio.shape[0])):
-        axes[b, 0].plot(audio[b].squeeze(0)[:2000])
-        axes[b, 1].plot(f0[b].squeeze(0), 'r')
-        axes[b, 2].plot(loudness[b].squeeze(0), 'g')
+        axes[b, 0].plot(audio[b].cpu().squeeze(0)[:2000])
+        axes[b, 1].plot(f0[b].cpu().squeeze(0), 'r')
+        axes[b, 2].plot(loudness[b].cpu().squeeze(0), 'g')
         for w in range(6):
             axes[b, w+3].plot(np.log(fft[w][b, :, 0] + 1e-3))#, aspect='auto')
     if (name is not None):
