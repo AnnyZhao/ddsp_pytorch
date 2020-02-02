@@ -60,8 +60,8 @@ class MSSTFTLoss(Loss):
 
     def forward(self, x, stfts_orig):
         # First compute multiple STFT for x
-        stfts = self.msstft(x.to(stfts_orig.device))
+        stfts = self.msstft(x.to(stfts_orig[0].device))
         # Compute loss
-        lin_loss = sum([torch.mean(torch.abs(stfts_orig[i][j] - stfts[i][j])) for i in range(len(stfts)) for j in range(len(stfts[i])) ])
+        lin_loss = sum([torch.mean(torch.abs(stfts_orig[i][j] - stfts[i][j])) for i in range(len(stfts)) for j in range(len(stfts[i]))])
         log_loss = sum([torch.mean(torch.abs(torch.log(stfts_orig[i][j] + 1e-4) - torch.log(stfts[i][j] + 1e-4))) for i in range(len(stfts)) for j in range(len(stfts[i])) ])
         return lin_loss + log_loss
