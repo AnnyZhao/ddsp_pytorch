@@ -207,7 +207,7 @@ for i in range(args.epochs):
         print('[Going to evaluation mode]')
         break
     print('Epoch ' + str(i))
-    print('Losses' + losses[i])
+    print('Losses' + str(losses[i]))
 
 """
 ###################
